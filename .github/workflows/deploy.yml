@@ -21,26 +21,41 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.ref || github.ref }}
+      
       - name: Setup SSH key
         run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
-          chmod 600 key.pem
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/key.pem
+          chmod 600 ~/.ssh/key.pem
+          # Agregar host a known_hosts para evitar prompt
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+      
       - name: Sync code to EC2
         run: |
-          rsync -az --delete -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/key.pem -o StrictHostKeyChecking=no -o ConnectTimeout=30" \
+            --exclude='.git' \
+            --exclude='.venv' \
+            --exclude='__pycache__' \
             ./ ec2-user@${{ secrets.EC2_HOST }}:/opt/clientes-app/
+      
       - name: Install & restart service
         run: |
-          ssh -i key.pem -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/key.pem -o StrictHostKeyChecking=no -o ConnectTimeout=30 \
+            ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
-            sudo mkdir -p /opt/clientes-app
             cd /opt/clientes-app
-            sudo python3 -m venv .venv || true
-            sudo .venv/bin/pip install --upgrade pip
-            if [ -f requirements.txt ]; then sudo .venv/bin/pip install -r requirements.txt; fi
+            
+            # Crear venv si no existe
+            [ ! -d ".venv" ] && python3 -m venv .venv
+            
+            # Instalar dependencias
+            source .venv/bin/activate
+            pip install --upgrade pip
+            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            
+            # Configurar servicio
             sudo cp -f service/clientes.service /etc/systemd/system/clientes.service
             sudo systemctl daemon-reload
-            sudo systemctl enable clientes --now
+            sudo systemctl enable clientes
             sudo systemctl restart clientes
-            sudo systemctl status clientes --no-pager -l || true
-          EOF

@@ -58,7 +58,7 @@ jobs:
             set -e
             cd /opt/clientes-app
             
-            # Crear venv si no existe (sin sudo)
+            # Crear venv si no existe
             if [ ! -d ".venv" ]; then
               python3 -m venv .venv
             fi

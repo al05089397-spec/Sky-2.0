@@ -1,0 +1,21 @@
+name: Issue Flows
+on:
+  issues:
+    types: [opened, edited, labeled, reopened]
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Respond based on labels
+        uses: actions-ecosystem/action-add-comment@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            Gracias por reportar. Etiquetas: ${{ join(github.event.issue.labels.*.name, ', ') }}
+            - `new-client` → Alta de cliente
+            - `update-client` → Modificación de datos
+            - `query-client` → Consulta de información
+            - `feature-request` / `enhancement` → Mejora/función nueva
+            - `code-change` → Cambio de código
+
+

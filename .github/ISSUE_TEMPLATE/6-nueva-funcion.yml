@@ -1,0 +1,8 @@
+name: Nueva función
+description: Solicitar una nueva función
+labels: ["new-function"]
+body:
+  - type: textarea
+    id: detalle
+    attributes: { label: Descripción de la nueva función }
+    validations: { required: true }

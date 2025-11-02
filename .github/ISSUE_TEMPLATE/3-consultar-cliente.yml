@@ -1,0 +1,8 @@
+name: Consultar cliente
+description: Consulta de información
+labels: ["query-client"]
+body:
+  - type: input
+    id: id
+    attributes: { label: ID del cliente }
+    validations: { required: true }

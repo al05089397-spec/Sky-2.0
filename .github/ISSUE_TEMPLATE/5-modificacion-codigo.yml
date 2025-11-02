@@ -1,0 +1,8 @@
+name: Modificación de código
+description: Cambios técnicos
+labels: ["code-change"]
+body:
+  - type: textarea
+    id: detalle
+    attributes: { label: Descripción del cambio }
+    validations: { required: true }
